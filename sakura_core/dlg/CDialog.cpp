@@ -83,6 +83,7 @@ CDialog::CDialog(bool bSizable, bool bCheckShareData)
 CDialog::~CDialog()
 {
 //	MYTRACE( L"CDialog::~CDialog()\n" );
+	DeleteObject( m_hFontMessage );
 	CloseDialog( 0 );
 	return;
 }
@@ -183,8 +184,27 @@ BOOL CDialog::OnInitDialog( HWND hwndDlg, WPARAM wParam, LPARAM lParam )
 
 	SetDialogPosSize();
 
+	SetDialogFont();
+
 	m_bInited = TRUE;
 	return TRUE;
+}
+
+
+BOOL CALLBACK SetDialogFontProc( HWND hwnd , LPARAM hFont )
+{
+	SendMessageAny( hwnd, WM_SETFONT, (WPARAM)hFont, (LPARAM)FALSE );
+	return TRUE;
+}
+
+void CDialog::SetDialogFont()
+{
+	NONCLIENTMETRICS metrics = {};
+	metrics.cbSize = sizeof( metrics );
+	SystemParametersInfo( SPI_GETNONCLIENTMETRICS, 0, &metrics, 0 );
+	m_hFontMessage = CreateFontIndirect( &metrics.lfMessageFont );
+	SendMessageAny( m_hWnd, WM_SETFONT, (WPARAM)m_hFontMessage, (LPARAM)FALSE );
+	EnumChildWindows( m_hWnd, SetDialogFontProc, (LPARAM)m_hFontMessage );
 }
 
 void CDialog::SetDialogPosSize()
