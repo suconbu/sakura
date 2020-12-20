@@ -112,6 +112,35 @@ bool GetDateTimeFormat( WCHAR* szResult, size_t size, const WCHAR* format, const
 	return ret;
 }
 
+/*!	書式変換された文字列を末尾に追加
+	@param[in] s 追加先の文字列
+	@param[in] format 書式文字列(printfと同じ書式)
+	@param[in] ... 書式文字列に対応する引数
+*/
+void AppendFormat( std::wstring& s, std::wstring_view format, ... )
+{
+	va_list ap;
+	va_start( ap, format );
+
+	const size_t len = _vsnwprintf( NULL, 0, format.data(), ap );
+
+	wchar_t arr[100] = {};
+	std::vector<wchar_t> vec;
+	wchar_t* ptr = arr;
+	if( _countof(arr) < len + 1 ){
+		vec.resize( len + 1 );
+		ptr = vec.data();
+	}
+
+	(void)_vsnwprintf( ptr, len + 1, format.data(), ap );
+	ptr[len] = L'\0';	// C6053対策
+	s.append( ptr );
+
+	va_end( ap );
+
+	return;
+}
+
 /*!	バージョン番号の解析
 
 	@param[in] バージョン番号文字列

@@ -121,3 +121,24 @@ TEST( format, Formatting )
 	EXPECT_TRUE( GetDateTimeFormat( buffer3, _countof(buffer3), L"%Y-%y-%m-%d %H:%M:%S", time ) );
 	ASSERT_STREQ( L"12345-45-12-23 12:34:56", buffer3 );
 }
+
+/*!
+ * @brief AppendFormatのテスト
+ */
+TEST( format, AppendFormat )
+{
+	std::wstring s1;
+	AppendFormat( s1, L"" );
+	ASSERT_STREQ( L"", s1.c_str() );
+	AppendFormat( s1, L"", 1 );
+	ASSERT_STREQ( L"", s1.c_str() );
+	AppendFormat( s1, L"1" );
+	ASSERT_STREQ( L"1", s1.c_str() );
+	AppendFormat( s1, L"%s", L"2" );
+	ASSERT_STREQ( L"12", s1.c_str() );
+	AppendFormat( s1, L"%d", 3 );
+	ASSERT_STREQ( L"123", s1.c_str() );
+	// 100文字超の追加
+	AppendFormat( s1, L"%s", L"\n123456789\n123456789\n123456789\n123456789\n123456789\n123456789\n123456789\n123456789\n123456789\n123456789\n" );
+	ASSERT_STREQ( L"123\n123456789\n123456789\n123456789\n123456789\n123456789\n123456789\n123456789\n123456789\n123456789\n123456789\n", s1.c_str() );
+}
