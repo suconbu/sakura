@@ -1097,6 +1097,9 @@
     <ClInclude Include="..\sakura_core\GrepInfo.h">
       <Filter>Cpp Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\sakura_core\util\zoom.h">
+      <Filter>Cpp Source Files\util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\resource\auto_scroll_center.cur">
@@ -2278,6 +2281,9 @@
     </ClCompile>
     <ClCompile Include="..\sakura_core\GrepInfo.cpp">
       <Filter>Cpp Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sakura_core\util\zoom.cpp">
+      <Filter>Cpp Source Files\util</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -91,6 +91,9 @@
     <ClCompile Include="test-cwordparse.cpp">
       <Filter>Test Files</Filter>
     </ClCompile>
+    <ClCompile Include="test-zoom.cpp">
+      <Filter>Test Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="StartEditorProcessForTest.h">
