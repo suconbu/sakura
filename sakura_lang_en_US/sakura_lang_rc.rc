@@ -3493,8 +3493,8 @@ BEGIN
     STR_FILEDIALOG_MRU      "Recent &File:"
     STR_FILEDIALOG_OPENFOLDER "Recent Fol&der:"
     STR_IMPEXP_REGEX4       "keyword truncated because too long."
-    STR_STATUS_FONTZOOM_0   "%4.0f %%"
-    STR_STATUS_FONTZOOM_1   "%4.1f %%"
+    STR_STATUS_FONTZOOM_0   "%4.0f%%"
+    STR_STATUS_FONTZOOM_1   "%4.1f%%"
 END
 
 STRINGTABLE
