@@ -1589,7 +1589,7 @@ void CTabWnd::DrawTabMarker( CGraphics& gr, const LPRECT lprcClient, int nTabInd
 	RECT rcCurSelWnd = {};
 	rcCurSelWnd.left = pt.x;
 	rcCurSelWnd.right = pt.x + (rcCurSelTab.right - rcCurSelTab.left);
-	rcCurSelWnd.top = lprcClient->top + TAB_MARGIN_TOP - 2;
+	rcCurSelWnd.top = lprcClient->top + 1;	// DrawEdgeで描画された境界線の1px(表示スケール非連動)
 	rcCurSelWnd.bottom = lprcClient->top + TAB_MARGIN_TOP;
 
 	// タブコントロール(m_hwndTab)の左端はTAB_MARGIN_LEFTに配置されるのでこの制限は不要なはず
