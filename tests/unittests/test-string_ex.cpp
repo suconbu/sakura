@@ -136,6 +136,30 @@ TEST(string_ex, strprintfEmpty)
 }
 
 /*!
+	@brief 文字列末尾に追加する独自定義のフォーマット関数
+	strprintfと同様にsprintf_sの注意点が適用されます。
+ */
+TEST(string_ex, append_format)
+{
+	std::wstring text;
+	int n = 0;
+
+	n = append_format(text, L"");
+	ASSERT_EQ(0, n);
+	n = append_format(text, L"%s-%d\n", L"test", 101);
+	ASSERT_EQ(9, n);
+	n = append_format(text, L"%04x-%.3f", 101, 101.0);
+	ASSERT_EQ(12, n);
+	ASSERT_STREQ(L"test-101\n0065-101.000", text.c_str());
+
+	// Wrong usages:
+	// append_format(text, nullptr);			// Cannot set nullptr for `fmt`.
+	// append_format(text, L"%b", 101);			// Unknown format identifier.
+	// append_format(text, L"%s", 101);			// Argument types mismatched.
+	// append_format(text, L"%d %d %d", 101);	// Number of arguments mismatched.
+}
+
+/*!
 	@brief 独自定義の文字列比較関数。
  */
 TEST(string_ex, strncmp_literal)

@@ -210,6 +210,20 @@ std::wstring strprintf(const WCHAR* pszFormat, ...);
 int vstrprintf( std::wstring& strOut, const WCHAR* pszFormat, va_list& argList );
 int strprintf( std::wstring& strOut, const WCHAR* pszFormat, ... );
 
+template <typename... T>
+int append_format( std::wstring& str, std::wstring_view fmt, T... args )
+{
+	const int nAppendLen = ::_scwprintf( fmt.data(), args... );
+	if( nAppendLen <= 0 ){
+		return 0;
+	}
+	const int nOriginalLen = (int)str.length();
+	str.resize( (size_t)nOriginalLen + nAppendLen + 1 );
+	::swprintf_s( str.data() + nOriginalLen, (size_t)nAppendLen + 1, fmt.data(), args... );
+	str.pop_back();
+	return (int)str.length() - nOriginalLen;
+}
+
 // -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- //
 //                      文字コード変換                         //
 // -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- //
