@@ -58,6 +58,9 @@
 #include <windowsx.h>
 #include "config/system_constants.h"
 #include "String_define.h"
+extern "C" {
+#include <dwmapi.h>	//DwmGetColorizationColor
+}
 
 // 2006.01.30 ryoji タブのサイズ／位置に関する定義
 // 2009.10.01 ryoji 高DPI対応スケーリング
@@ -1609,7 +1612,14 @@ void CTabWnd::DrawTabMarker( CGraphics& gr, const LPRECT lprcClient, int nTabInd
 
 	if( rcCurSel.left < rcCurSel.right )
 	{
-		::MyFillRect( gr, rcCurSel, RGB( 255, 128, 0 ) );
+		DWORD dwArgb = 0;
+		BOOL bOpaque = FALSE;
+		// アクセントカラーが取れたらそれを使って描画
+		if( SUCCEEDED( ::DwmGetColorizationColor( &dwArgb, &bOpaque ) ) ){
+			::MyFillRect( gr, rcCurSel, RGB( (dwArgb >> 16) & 0xFF, (dwArgb >> 8) & 0xFF, dwArgb & 0xFF ) );
+		}else{
+			::MyFillRect( gr, rcCurSel, RGB( 255, 128, 0 ) );
+		}
 	}
 }
 
