@@ -1580,45 +1580,43 @@ LRESULT CTabWnd::OnTimer( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 
 void CTabWnd::DrawTabMarker( CGraphics& gr, const LPRECT lprcClient, int nTabIndex )
 {
-	POINT pt;
-	RECT rcCurSel;
-
-	TabCtrl_GetItemRect( m_hwndTab, nTabIndex, &rcCurSel );
-	pt.x = rcCurSel.left;
-	pt.y = 0;
+	// 指定タブのタブバーウィンドウ上における矩形領域を得る
+	RECT rcCurSelTab = {};
+	TabCtrl_GetItemRect( m_hwndTab, nTabIndex, &rcCurSelTab );
+	POINT pt = { rcCurSelTab.left, 0 };
 	::ClientToScreen( m_hwndTab, &pt );
 	::ScreenToClient( GetHwnd(), &pt );
-	rcCurSel.right = pt.x + (rcCurSel.right - rcCurSel.left) - 1;
-	rcCurSel.left = pt.x + 1;
-	rcCurSel.top = lprcClient->top + TAB_MARGIN_TOP - 2;
-	rcCurSel.bottom = lprcClient->top + TAB_MARGIN_TOP;
+	RECT rcCurSelWnd = {};
+	rcCurSelWnd.left = pt.x;
+	rcCurSelWnd.right = pt.x + (rcCurSelTab.right - rcCurSelTab.left);
+	rcCurSelWnd.top = lprcClient->top + TAB_MARGIN_TOP - 2;
+	rcCurSelWnd.bottom = lprcClient->top + TAB_MARGIN_TOP;
 
-	if( rcCurSel.left < lprcClient->left + TAB_MARGIN_LEFT )
-		rcCurSel.left = lprcClient->left + TAB_MARGIN_LEFT;	// 左端限界値
+	// タブコントロール(m_hwndTab)の左端はTAB_MARGIN_LEFTに配置されるのでこの制限は不要なはず
+	//if( rcCurSelWnd.left < lprcClient->left + TAB_MARGIN_LEFT ){
+	//	rcCurSelWnd.left = lprcClient->left + TAB_MARGIN_LEFT;	// 左端限界値
+	//}
 
+	// [<][>]ボタンと重なる部分は描画しない
 	HWND hwndUpDown = ::FindWindowEx( m_hwndTab, NULL, UPDOWN_CLASS, 0 );	// タブ内の Up-Down コントロール
-	if( hwndUpDown && ::IsWindowVisible( hwndUpDown ) )
-	{
-		POINT ptREnd;
-		RECT rcUpDown;
-
+	if( hwndUpDown && ::IsWindowVisible( hwndUpDown ) ){
+		RECT rcUpDown = {};
 		::GetWindowRect( hwndUpDown, &rcUpDown );
-		ptREnd.x = rcUpDown.left;
-		ptREnd.y = 0;
+		POINT ptREnd = { rcUpDown.left, 0 };
 		::ScreenToClient( GetHwnd(), &ptREnd );
-		if( rcCurSel.right > ptREnd.x )
-			rcCurSel.right = ptREnd.x;	// 右端限界値
+		if( rcCurSelWnd.right > ptREnd.x ){
+			rcCurSelWnd.right = ptREnd.x;	// 右端限界値
+		}
 	}
 
-	if( rcCurSel.left < rcCurSel.right )
-	{
-		DWORD dwArgb = 0;
+	if( rcCurSelWnd.left < rcCurSelWnd.right ){
+		DWORD dwArgb = 0U;
 		BOOL bOpaque = FALSE;
 		// アクセントカラーが取れたらそれを使って描画
 		if( SUCCEEDED( ::DwmGetColorizationColor( &dwArgb, &bOpaque ) ) ){
-			::MyFillRect( gr, rcCurSel, RGB( (dwArgb >> 16) & 0xFF, (dwArgb >> 8) & 0xFF, dwArgb & 0xFF ) );
+			::MyFillRect( gr, rcCurSelWnd, RGB( (dwArgb >> 16) & 0xFF, (dwArgb >> 8) & 0xFF, dwArgb & 0xFF ) );
 		}else{
-			::MyFillRect( gr, rcCurSel, RGB( 255, 128, 0 ) );
+			::MyFillRect( gr, rcCurSelWnd, RGB( 255, 128, 0 ) );
 		}
 	}
 }
