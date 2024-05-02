@@ -13,7 +13,7 @@
 	Copyright (C) 2006, ryoji
 	Copyright (C) 2009, ryoji
 	Copyright (C) 2012, Uchi
-	Copyright (C) 2018-2022, Sakura Editor Organization
+	Copyright (C) 2018-2024, Sakura Editor Organization
 
 	This source code is designed for sakura editor.
 	Please contact the copyright holder to use this code for other purpose.
@@ -92,6 +92,18 @@ void CDlgFind::ChangeView( LPARAM pcEditView )
 	return;
 }
 
+// 検索文字列の設定
+void CDlgFind::SetSearchText( const wchar_t* text )
+{
+	m_strText = text;
+	::DlgItem_SetText( GetHwnd(), IDC_COMBO_TEXT, m_strText.c_str() );
+
+	if( m_bInited ){
+		// すでにダイアログが表示中なら設定された検索文字列でヒット数を更新
+		UpdateMessageText();
+	}
+}
+
 BOOL CDlgFind::OnInitDialog( HWND hwnd, WPARAM wParam, LPARAM lParam )
 {
 	BOOL bRet = CDialog::OnInitDialog(hwnd, wParam, lParam);
@@ -101,6 +113,11 @@ BOOL CDlgFind::OnInitDialog( HWND hwnd, WPARAM wParam, LPARAM lParam )
 	HFONT hFontOld = (HFONT)::SendMessageAny( GetItemHwnd( IDC_COMBO_TEXT ), WM_GETFONT, 0, 0 );
 	HFONT hFont = SetMainFont( GetItemHwnd( IDC_COMBO_TEXT ) );
 	m_cFontText.SetFont( hFontOld, hFont, GetItemHwnd( IDC_COMBO_TEXT ) );
+
+	// 該当数の逐次表示する/しないを決めるための文書のサイズ取得
+	CEditView* pcEditView = (CEditView*)m_lParam;
+	m_nDocLength = GetDocLength( pcEditView->m_pcEditDoc );
+
 	return bRet;
 }
 
@@ -171,7 +188,46 @@ void CDlgFind::SetData( void )
 	/* 先頭（末尾）から再検索 2002.01.26 hor */
 	::CheckDlgButton( GetHwnd(), IDC_CHECK_SEARCHALL, m_pShareData->m_Common.m_sSearch.m_bSearchAll );
 
+	// メッセージ表示
+	UpdateMessageText();
+
 	return;
+}
+
+// 現在の検索文字列/オプションに基づいてメッセージ表示内容を更新
+void CDlgFind::UpdateMessageText()
+{
+	GetSearchTextAndOption();
+
+	std::wstring message;
+	if( !m_strText.empty() ){
+		bool bValidRegexp = true;
+		if( m_sSearchOption.bRegularExp ){
+			bValidRegexp = CheckRegexpSyntax(m_strText.c_str(), GetHwnd(), false, m_sSearchOption.bLoHiCase ? 0x01 : 0x00);
+		}
+
+		if( !bValidRegexp ){
+			// 正規表現が不正
+			message = LS(STR_REGEX_COMPILE_ERR_PREAMBLE);
+			// メッセージは一行目のみつかう
+			message = message.substr( 0, message.find_first_of( L"\r\n" ) );
+		}else{
+			// 文書が大きい場合は検索文字列入力のレスポンス低下を回避するため件数表示を省略(else側へ)
+			if( m_nDocLength < (1U * 1000U * 1000U)){
+				const size_t nMatchCount = GetMatchCount( m_strText, m_sSearchOption );
+				if( 0 < nMatchCount ){
+					message = strprintf( LS(STR_DLGFIND_FOUND), nMatchCount );
+				}else{
+					message = LS(STR_DLGFIND_NOT_FOUND);
+				}
+			}else{
+				message = L"";
+			}
+		}
+	}else{
+		message = LS(STR_DLGFIND_EMPTY);
+	}
+	::DlgItem_SetText( GetHwnd(), IDC_STATIC_MESSAGE, message.c_str() );
 }
 
 // 検索文字列リストの設定
@@ -196,24 +252,13 @@ int CDlgFind::GetData( void )
 {
 //	MYTRACE( L"CDlgFind::GetData()" );
 
-	/* 英大文字と英小文字を区別する */
-	m_sSearchOption.bLoHiCase = (0!=IsDlgButtonChecked( GetHwnd(), IDC_CHK_LOHICASE ));
-
-	// 2001/06/23 Norio Nakatani
-	/* 単語単位で検索 */
-	m_sSearchOption.bWordOnly = (0!=IsDlgButtonChecked( GetHwnd(), IDC_CHK_WORD ));
-
-	/* 一致する単語のみ検索する */
-	/* 正規表現 */
-	m_sSearchOption.bRegularExp = (0!=IsDlgButtonChecked( GetHwnd(), IDC_CHK_REGULAREXP ));
+	/* 検索文字列とオプション */
+	GetSearchTextAndOption();
 
 	/* 検索／置換  見つからないときメッセージを表示 */
 	m_bNOTIFYNOTFOUND = ::IsDlgButtonChecked( GetHwnd(), IDC_CHECK_NOTIFYNOTFOUND );
 
 	m_pShareData->m_Common.m_sSearch.m_bNOTIFYNOTFOUND = m_bNOTIFYNOTFOUND;	// 検索／置換  見つからないときメッセージを表示
-
-	/* 検索文字列 */
-	ApiWrap::DlgItem_GetText( GetHwnd(), IDC_COMBO_TEXT, m_strText );
 
 	/* 検索ダイアログを自動的に閉じる */
 	m_pShareData->m_Common.m_sSearch.m_bAutoCloseDlgFind = ::IsDlgButtonChecked( GetHwnd(), IDC_CHECK_bAutoCloseDlgFind );
@@ -257,10 +302,27 @@ int CDlgFind::GetData( void )
 	}
 }
 
+// 検索文字列/オプションのコントロールの値をメンバ変数に取得
+void CDlgFind::GetSearchTextAndOption( void )
+{
+	/* 検索文字列 */
+	ApiWrap::DlgItem_GetText( GetHwnd(), IDC_COMBO_TEXT, m_strText );
+
+	/* 英大文字と英小文字を区別する */
+	m_sSearchOption.bLoHiCase = (0!=IsDlgButtonChecked( GetHwnd(), IDC_CHK_LOHICASE ));
+
+	/* 単語単位で検索 */
+	m_sSearchOption.bWordOnly = (0!=IsDlgButtonChecked( GetHwnd(), IDC_CHK_WORD ));
+
+	/* 正規表現 */
+	m_sSearchOption.bRegularExp = (0!=IsDlgButtonChecked( GetHwnd(), IDC_CHK_REGULAREXP ));
+}
+
 BOOL CDlgFind::OnBnClicked( int wID )
 {
 	int			nRet;
 	CEditView*	pcEditView = (CEditView*)m_lParam;
+	BOOL		bResult = FALSE;
 	switch( wID ){
 	case IDC_BUTTON_HELP:
 		/* 「検索」のヘルプ */
@@ -328,10 +390,8 @@ BOOL CDlgFind::OnBnClicked( int wID )
 				}
 			}
 		}
-		else if (nRet == 0){
-			OkMessage( GetHwnd(), LS(STR_DLGFIND1) );	// 検索条件を指定してください。
-		}
-		return TRUE;
+		bResult = TRUE;
+		break;
 	case IDC_BUTTON_SEARCHNEXT:		/* 下検索 */	//Feb. 13, 2001 JEPRO ボタン名を[IDOK]→[IDC_BUTTON_SERACHNEXT]に変更
 		/* ダイアログデータの取得 */
 		nRet = GetData();
@@ -359,10 +419,8 @@ BOOL CDlgFind::OnBnClicked( int wID )
 				}
 			}
 		}
-		else if (nRet == 0){
-			OkMessage( GetHwnd(), LS(STR_DLGFIND1) );	// 検索条件を指定してください。
-		}
-		return TRUE;
+		bResult = TRUE;
+		break;
 	case IDC_BUTTON_SETMARK:	//2002.01.16 hor 該当行マーク
 		if( 0 < GetData() ){
 			if( m_bModal ){		/* モーダルダイアログか */
@@ -378,12 +436,36 @@ BOOL CDlgFind::OnBnClicked( int wID )
 				}
 			}
 		}
-		return TRUE;
+		bResult = TRUE;
+		break;
 	case IDCANCEL:
 		CloseDialog( 0 );
-		return TRUE;
+		bResult = TRUE;
+		break;
 	}
-	return FALSE;
+
+	// 検索オプションが変更されたらメッセージ表示に反映
+	if( wID == IDC_CHK_REGULAREXP || wID == IDC_CHK_WORD || wID == IDC_CHK_LOHICASE ){
+		UpdateMessageText();
+	}
+
+	return bResult;
+}
+
+BOOL CDlgFind::OnCbnSelChange( HWND hwndCtl, int wID )
+{
+	if( wID == IDC_COMBO_TEXT ){
+		UpdateMessageText();
+	}
+	return CDialog::OnCbnSelChange( hwndCtl, wID );
+}
+
+BOOL CDlgFind::OnCbnEditChange( HWND hwndCtl, int wID )
+{
+	if( wID == IDC_COMBO_TEXT ){
+		UpdateMessageText();
+	}
+	return CDialog::OnCbnEditChange( hwndCtl, wID );
 }
 
 BOOL CDlgFind::OnActivate( WPARAM wParam, LPARAM lParam )
@@ -403,3 +485,51 @@ LPVOID CDlgFind::GetHelpIdTable(void)
 	return (LPVOID)p_helpids;
 }
 //@@@ 2002.01.18 add end
+
+// 文書全体の文字数(各行のEOL含む)を取得
+size_t CDlgFind::GetDocLength( const CEditDoc* pcDoc ) const
+{
+	const CDocLine* pcDocLine = pcDoc->m_cLayoutMgr.m_pcDocLineMgr->GetDocLineTop();
+	size_t nCount = 0;
+	while( pcDocLine != NULL ){
+		nCount += pcDocLine->GetLengthWithEOL();
+		pcDocLine = pcDocLine->GetNextLine();
+	}
+	return nCount;
+}
+
+// 指定した検索文字列/オプションにマッチする件数を取得
+// 検索対象は現在設定されているCEditView
+size_t CDlgFind::GetMatchCount( const std::wstring& text, const SSearchOption& option, size_t nMaxCount ) const
+{
+	CEditView* pcEditView = (CEditView*)m_lParam;
+	if( pcEditView == NULL ){
+		return 0;
+	}
+
+	CSearchStringPattern pattern;
+	CBregexp regexp;
+	pattern.SetPattern(pcEditView->GetHwnd(), text.c_str(), static_cast<int>(text.size()), option, &regexp);
+
+	CLogicPoint nextPoint;
+	CLogicRange matchRange;
+	CSearchAgent searchAgent(pcEditView->m_pcEditDoc->m_cLayoutMgr.m_pcDocLineMgr);
+	size_t nMatchCount = 0;
+	while( nMatchCount < nMaxCount ){
+		if( 0 == searchAgent.SearchWord(
+			CLogicPoint( nextPoint.GetX(), nextPoint.GetY() ),
+			SEARCH_FORWARD,
+			&matchRange,
+			pattern
+		)){
+			break;
+		}
+		if( nextPoint == matchRange.GetTo() ){
+			break;
+		}
+		nextPoint = matchRange.GetTo();
+		nMatchCount++;
+	}
+
+	return nMatchCount;
+}

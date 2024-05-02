@@ -1,6 +1,6 @@
 ﻿/*! @file */
 /*
-	Copyright (C) 2018-2022, Sakura Editor Organization
+	Copyright (C) 2018-2024, Sakura Editor Organization
 
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -223,7 +223,9 @@
 #define STR_ERR_DLGUPQRY1				34161
 #define STR_ERR_DLGUPQRY2				34162
 
-#define STR_DLGFIND1					34163
+#define STR_DLGFIND_EMPTY				34163
+#define STR_DLGFIND_FOUND				35049
+#define STR_DLGFIND_NOT_FOUND			35050
 
 #define STR_DLGFNCLST_TITLE_CPP			34164
 #define STR_DLGFNCLST_TITLE_RULE		34165
@@ -1328,4 +1330,4 @@
 #define STR_GSTR_APPNAME				35047
 #define STR_REGEX_COMPILE_ERR_PREAMBLE	35048
 
-// Now using max number 35048 by STR_REGEX_COMPILE_ERR_PREAMBLE
+// Now using max number 35050 by STR_DLGFIND_NOT_FOUND

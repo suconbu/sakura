@@ -39,6 +39,8 @@ public:
 
 	void ChangeView(LPARAM pcEditView);
 
+	void SetSearchText(const wchar_t* text);
+
 	SSearchOption m_sSearchOption;	// 検索オプション
 	int		m_bNOTIFYNOTFOUND;	// 検索／置換  見つからないときメッセージを表示
 	std::wstring	m_strText;	// 検索文字列
@@ -53,14 +55,22 @@ protected:
 //	void AddToSearchKeyArr( const char* );
 	BOOL OnCbnDropDown( HWND hwndCtl, int wID ) override;
 	int GetData( void ) override;		/* ダイアログデータの取得 */
-	void SetCombosList( void );	/* 検索文字列/置換後文字列リストの設定 */
+	void GetSearchTextAndOption( void );/* 検索文字列/オプションの取得 */
+	void SetCombosList( void );			/* 検索文字列/置換後文字列リストの設定 */
 	void SetData( void ) override;		/* ダイアログデータの設定 */
+	void UpdateMessageText();			/* メッセージ表示内容の更新 */
 	BOOL OnInitDialog(HWND hwnd, WPARAM wParam, LPARAM lParam) override;
 	BOOL OnDestroy() override;
 	BOOL OnBnClicked(int wID) override;
+	BOOL OnCbnSelChange( HWND hwndCtl, int wID ) override;
+	BOOL OnCbnEditChange( HWND hwndCtl, int wID ) override;
 	BOOL OnActivate( WPARAM wParam, LPARAM lParam ) override;	// 2009.11.29 ryoji
 
 	// BOOL OnKeyDown( WPARAM wParam, LPARAM lParam ) override;
 	LPVOID GetHelpIdTable(void) override;	//@@@ 2002.01.18 add
+	size_t GetDocLength( const CEditDoc* pcDoc ) const;
+	size_t GetMatchCount( const std::wstring& text, const SSearchOption& option, size_t nMaxCount = SIZE_MAX ) const;
+
+	size_t m_nDocLength = 0;	// 検索対象文書の文字数(ダイアログボックス表示時に設定)
 };
 #endif /* SAKURA_CDLGFIND_AF260AA4_6075_4B87_9F03_2CEEDAD64094_H_ */
