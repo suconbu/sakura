@@ -40,6 +40,7 @@
 #include "apiwrap/StdApi.h"
 #include "config/app_constants.h"
 #include "String_define.h"
+#include "debug/CRunningTimer.h"
 
 ECallbackResult CLoadAgent::OnCheckLoad(SLoadInfo* pLoadInfo)
 {
@@ -196,6 +197,8 @@ void CLoadAgent::OnBeforeLoad(SLoadInfo* pLoadInfo)
 
 ELoadResult CLoadAgent::OnLoad(const SLoadInfo& sLoadInfo)
 {
+	MY_RUNNINGTIMER( cRunningTimer, L"CLoadAgent::OnLoad" );
+
 	ELoadResult eRet = LOADED_OK;
 	CEditDoc* pcDoc = GetListeningDoc();
 
@@ -248,6 +251,8 @@ ELoadResult CLoadAgent::OnLoad(const SLoadInfo& sLoadInfo)
 				types.m_encoding.m_bDefaultBom : CCodeTypeName( sLoadInfo.eCharCode ).IsBomDefOn() );
 	}
 
+	cRunningTimer.WriteTrace(L"ReadFile");
+
 	/* レイアウト情報の変更 */
 	// 2008.06.07 nasukoji	折り返し方法の追加に対応
 	// 「指定桁で折り返す」以外の時は折り返し幅をMAXLINEKETASで初期化する
@@ -276,6 +281,8 @@ ELoadResult CLoadAgent::OnLoad(const SLoadInfo& sLoadInfo)
 
 void CLoadAgent::OnAfterLoad(const SLoadInfo& sLoadInfo)
 {
+	MY_RUNNINGTIMER( cRunningTimer, L"CLoadAgent::OnAfterLoad" );
+
 	CEditDoc* pcDoc = GetListeningDoc();
 
 	/* 親ウィンドウのタイトルを更新 */

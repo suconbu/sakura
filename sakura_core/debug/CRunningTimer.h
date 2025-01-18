@@ -43,11 +43,11 @@
 #include <vector>
 
 // 本番コードに組み込まれている時間計測の結果を出力ペインに出したい時にコメントを外して下さい
-//#define TIME_MEASURE
+#define TIME_MEASURE
 
 #if defined(TIME_MEASURE)
   #define MY_TRACETIME(c,m) (c).WriteTrace(m)
-  #define MY_RUNNINGTIMER(c,m) CRunningTimer c(m, CRunningTimer::OutputMode::OnWriteTrace, CRunningTimer::OutputStyle::Conventional)
+  #define MY_RUNNINGTIMER(c,m) CRunningTimer c(m, CRunningTimer::OutputMode::OnWriteTrace, CRunningTimer::OutputStyle::Markdown)
 #else
   #define MY_TRACETIME(c,m)
   #define MY_RUNNINGTIMER(c,m)
