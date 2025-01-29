@@ -274,36 +274,46 @@ void CLayoutMgr::_MakeOneLine(SLayoutWork* pWork, PF_OnLine pfOnLine)
 	if(pWork->pcColorStrategy)pWork->pcColorStrategy->InitStrategyStatus();
 	CColorStrategyPool& color = *CColorStrategyPool::getInstance();
 
+	const bool bHasKinsoku = m_pTypeConfig->m_bWordWrap
+		|| m_pTypeConfig->m_bKinsokuKuto
+		|| m_pTypeConfig->m_bKinsokuHead
+		|| m_pTypeConfig->m_bKinsokuTail;
+	const bool bHasRangeBasedColorStrategies = color.HasRangeBasedColorStrategies();
+
 	//1ロジック行を消化するまでループ
 	while( pWork->nPos < nLength ){
 		// インデント幅は_OnLineで計算済みなのでここからは削除
 
-		//禁則処理中ならスキップする	@@@ 2002.04.20 MIK
-		if(_DoKinsokuSkip(pWork, pfOnLine)){ }
-		else{
-			// 英文ワードラップをする
-			if( m_pTypeConfig->m_bWordWrap ){
-				_DoWordWrap(pWork, pfOnLine);
-			}
+		if (bHasKinsoku) {
+			//禁則処理中ならスキップする	@@@ 2002.04.20 MIK
+			if(_DoKinsokuSkip(pWork, pfOnLine)){ }
+			else{
+				// 英文ワードラップをする
+				if( m_pTypeConfig->m_bWordWrap ){
+					_DoWordWrap(pWork, pfOnLine);
+				}
 
-			// 句読点のぶらさげ
-			if( m_pTypeConfig->m_bKinsokuKuto ){
-				_DoKutoBurasage(pWork);
-			}
+				// 句読点のぶらさげ
+				if( m_pTypeConfig->m_bKinsokuKuto ){
+					_DoKutoBurasage(pWork);
+				}
 
-			// 行頭禁則
-			if( m_pTypeConfig->m_bKinsokuHead ){
-				_DoGyotoKinsoku(pWork, pfOnLine);
-			}
+				// 行頭禁則
+				if( m_pTypeConfig->m_bKinsokuHead ){
+					_DoGyotoKinsoku(pWork, pfOnLine);
+				}
 
-			// 行末禁則
-			if( m_pTypeConfig->m_bKinsokuTail ){
-				_DoGyomatsuKinsoku(pWork, pfOnLine);
+				// 行末禁則
+				if( m_pTypeConfig->m_bKinsokuTail ){
+					_DoGyomatsuKinsoku(pWork, pfOnLine);
+				}
 			}
 		}
 
-		//@@@ 2002.09.22 YAZAKI
-		color.CheckColorMODE( &pWork->pcColorStrategy, pWork->nPos, pWork->cLineStr );
+		if (bHasRangeBasedColorStrategies) {
+			//@@@ 2002.09.22 YAZAKI
+			color.CheckColorMODE( &pWork->pcColorStrategy, pWork->nPos, pWork->cLineStr );
+		}
 
 		const auto& ch = pWork->cLineStr[pWork->nPos];
 		CLayoutInt nCharKetas {0};
