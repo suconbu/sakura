@@ -359,11 +359,16 @@ void CLayoutMgr::_DoLayout(bool bBlockingHook)
 
 	{
 		const CLogicInt nLineCount = m_pcDocLineMgr->GetLineCount();
-		int nWorkerThreadCount = (std::max)(1, (int)std::thread::hardware_concurrency()) - 1;
-		if (nLineCount <= nWorkerThreadCount) {
-		//{
+
+		int nWorkerThreadCount = 0;
+		if (nLineCount < 1000 || CColorStrategyPool::getInstance()->HasRangeBasedColorStrategies()) {
+			// 行数が少ない場合または範囲を持つ色分けがある場合※はマルチスレッド処理しない
+			// ※範囲(例：/*...*/)の途中でレイアウト化処理が分割されると正しく色分けができなくなるため
 			nWorkerThreadCount = 0;
+		} else {
+			nWorkerThreadCount = (std::max)(1, (int)std::thread::hardware_concurrency()) - 1;
 		}
+
 		std::vector<std::thread> vecWorkerThreads;
 		std::vector<CLayoutMgr> vecLayoutMgrs(nWorkerThreadCount);
 		std::atomic<bool> bCanceled = false;
@@ -377,9 +382,11 @@ void CLayoutMgr::_DoLayout(bool bBlockingHook)
 			CDocLine* pDocLineBegin = m_pcDocLineMgr->GetLine(CLogicInt(nLineIndexBegin));
 
 			if (i == 0) {
+				// メインスレッドで処理
 				_DoLayout(pDocLineBegin, pDocLineEnd, nLineIndexBegin, (nLineIndexEnd - nLineIndexBegin), pbCanceled, i);
 				break;
 			} else {
+				// ワーカースレッドを起こして処理
 				auto pcLayoutMgr = &vecLayoutMgrs[nWorkerThreadCount - i];
 				pcLayoutMgr->_CopyFrom(*this);
 				vecWorkerThreads.emplace_back([pcLayoutMgr, pDocLineBegin, pDocLineEnd, nLineIndexBegin, nLineIndexEnd, pbCanceled, i]{
@@ -389,6 +396,7 @@ void CLayoutMgr::_DoLayout(bool bBlockingHook)
 			}
 		}
 
+		// 各々の結果をまとめる
 		for (int i = (nWorkerThreadCount - 1); 0 <= i; i--) {
 			vecWorkerThreads.back().join();
 			vecWorkerThreads.pop_back();
