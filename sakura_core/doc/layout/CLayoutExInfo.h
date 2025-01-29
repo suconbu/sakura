@@ -43,6 +43,7 @@ public:
 	~CLayoutExInfo(){
 		delete m_colorInfo;
 	}
+
 	void SetColorInfo(CLayoutColorInfo* p){
 		if( m_colorInfo ){
 			delete m_colorInfo;

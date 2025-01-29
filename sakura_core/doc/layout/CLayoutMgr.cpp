@@ -42,7 +42,10 @@
 
 CLayoutMgr::CLayoutMgr()
 : m_getIndentOffset( &CLayoutMgr::getIndentOffset_Normal )	//	Oct. 1, 2002 genta	//	Nov. 16, 2002 メンバー関数ポインタにはクラス名が必要
-  , m_layoutMemRes(new CPoolResource<CLayout>())
+#if USE_MEMPOOL
+  , m_layoutMemRes(new std::pmr::synchronized_pool_resource())
+  //, m_layoutMemRes(new CPoolResource<CLayout>())
+#endif
   //, m_layoutMemRes(new std::pmr::unsynchronized_pool_resource()) // メモリ使用量が大きい為に使用しない
 {
 	m_pcDocLineMgr = NULL;
@@ -102,8 +105,12 @@ void CLayoutMgr::_Empty()
 	CLayout* pLayout = m_pLayoutTop;
 	while( pLayout ){
 		CLayout* pLayoutNext = pLayout->GetNextLayout();
+#if USE_MEMPOOL
 		pLayout->~CLayout();
 		m_layoutMemRes->deallocate(pLayout, sizeof(CLayout), alignof(CLayout));
+#else
+		delete pLayout;
+#endif
 		pLayout = pLayoutNext;
 	}
 }
@@ -390,7 +397,11 @@ CLayout* CLayoutMgr::CreateLayout(
 	CLayoutColorInfo*	colorInfo
 )
 {
+#if USE_MEMPOOL
 	CLayout* pLayout = new (m_layoutMemRes->allocate(sizeof(CLayout))) CLayout(
+#else
+	CLayout* pLayout = new CLayout(
+#endif
 		pCDocLine,
 		ptLogicPos,
 		nLength,
@@ -598,8 +609,12 @@ CLayout* CLayoutMgr::DeleteLayoutAsLogical(
 			DEBUG_TRACE( L"バグバグ\n" );
 		}
 
+#if USE_MEMPOOL
 		pLayout->~CLayout();
 		m_layoutMemRes->deallocate(pLayout, sizeof(CLayout), alignof(CLayout));
+#else
+		delete pLayout;
+#endif
 
 		m_nLines--;	/* 全物理行数 */
 		if( NULL == pLayoutNext ){

@@ -41,6 +41,8 @@
 #include "charset/charcode.h"
 #include "env/DLLSHAREDATA.h"
 
+#define USE_MEMPOOL 0
+
 class CBregexp;// 2002/2/10 aroka
 class CLayout;// 2002/2/10 aroka
 class CDocLineMgr;// 2002/2/10 aroka
@@ -292,6 +294,7 @@ public:
 	// 2005.11.21 Moca 引用符の色分け情報を引数から除去
 public:
 	void _DoLayout(bool bBlockingHook);	/* 現在の折り返し文字数に合わせて全データのレイアウト情報を再生成します */
+	void _DoLayout(CDocLine* pDocLineBegin, CDocLine* pDocLineEnd, int nLineIndexBegin, int nLineCount, std::atomic<bool>* pbCanceled, int nThreadIndex);
 protected:
 	// 2005.11.21 Moca 引用符の色分け情報を引数から除去
 	// 2009.08.28 nasukoji	テキスト最大幅算出用引数追加
@@ -358,6 +361,8 @@ private:
 	CLayoutInt getIndentOffset_Normal( CLayout* pLayoutPrev );
 	CLayoutInt getIndentOffset_Tx2x( CLayout* pLayoutPrev );
 	CLayoutInt getIndentOffset_LeftSpace( CLayout* pLayoutPrev );
+	void _CopyFrom( const CLayoutMgr& other );
+	void _MoveAppend( CLayoutMgr& other );
 
 protected:
 	/*
@@ -387,7 +392,9 @@ protected:
 	//実データ
 	CLayout*				m_pLayoutTop;
 	CLayout*				m_pLayoutBot;
+#if USE_MEMPOOL
 	std::unique_ptr<std::pmr::memory_resource> m_layoutMemRes;
+#endif
 
 	//タイプ別設定
 	const STypeConfig*		m_pTypeConfig;
@@ -403,6 +410,8 @@ protected:
 	//フラグ等
 	EColorIndexType			m_nLineTypeBot;				//!< タイプ 0=通常 1=行コメント 2=ブロックコメント 3=シングルクォーテーション文字列 4=ダブルクォーテーション文字列
 	CLayoutExInfo			m_cLayoutExInfoBot;
+	EColorIndexType			m_nColorPrev;
+	CLayoutExInfo			m_cExInfoPrev;
 	CLayoutInt				m_nLines;					// 全レイアウト行数
 
 	mutable CLayoutInt		m_nPrevReferLine;
