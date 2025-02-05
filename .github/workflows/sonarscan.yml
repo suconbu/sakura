@@ -62,7 +62,7 @@ jobs:
           sonar-cache-${{ env.SONAR_QUBE_VERSION }}-${{ env.BASE_SHA }}
 
     - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v1
+      uses: microsoft/setup-msbuild@v2
 
     - name: Fetch Build-Wrapper
       working-directory: ${{ github.workspace }}\.sonar
