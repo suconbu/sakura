@@ -29,6 +29,7 @@
 
 #include "doc/CDocListener.h" // CProgressSubject
 #include "charset/CCodeBase.h" // EConvertResult
+#include <atomic>
 
 class CDocLineMgr;
 struct SFileInfo; // doc/CDocFile.h

@@ -54,7 +54,7 @@
 // -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- //
 
 CDocLineMgr::CDocLineMgr()
-	: m_docLineMemRes(new CPoolResource<CDocLine>())
+	//: m_docLineMemRes(new CPoolResource<CDocLine>())
 	//: m_docLineMemRes(new std::pmr::unsynchronized_pool_resource()) // メモリ使用量が大きい為に使用しない
 {
 	_Init();
@@ -72,7 +72,8 @@ CDocLineMgr::~CDocLineMgr()
 //! pPosの直前に新しい行を挿入
 CDocLine* CDocLineMgr::InsertNewLine(CDocLine* pPos)
 {
-	CDocLine* pcDocLineNew = new (m_docLineMemRes->allocate(sizeof(CDocLine))) CDocLine();
+	CDocLine* pcDocLineNew = new CDocLine;
+	//CDocLine* pcDocLineNew = new (m_docLineMemRes->allocate(sizeof(CDocLine))) CDocLine();
 	_InsertBeforePos(pcDocLineNew,pPos);
 	return pcDocLineNew;
 }
@@ -80,7 +81,8 @@ CDocLine* CDocLineMgr::InsertNewLine(CDocLine* pPos)
 //! 最下部に新しい行を挿入
 CDocLine* CDocLineMgr::AddNewLine()
 {
-	CDocLine* pcDocLineNew = new (m_docLineMemRes->allocate(sizeof(CDocLine))) CDocLine();
+	CDocLine* pcDocLineNew = new CDocLine;
+	//CDocLine* pcDocLineNew = new (m_docLineMemRes->allocate(sizeof(CDocLine))) CDocLine();
 	_PushBottom(pcDocLineNew);
 	return pcDocLineNew;
 }
@@ -92,7 +94,8 @@ void CDocLineMgr::DeleteAllLine()
 	while( pDocLine ){
 		CDocLine* pDocLineNext = pDocLine->GetNextLine();
 		pDocLine->~CDocLine();
-		m_docLineMemRes->deallocate(pDocLine, sizeof(CDocLine));
+		delete pDocLine;
+		//m_docLineMemRes->deallocate(pDocLine, sizeof(CDocLine));
 		pDocLine = pDocLineNext;
 	}
 	_Init();
@@ -124,7 +127,8 @@ void CDocLineMgr::DeleteLine( CDocLine* pcDocLineDel )
 
 	//データ削除
 	pcDocLineDel->~CDocLine();
-	m_docLineMemRes->deallocate(pcDocLineDel, sizeof(CDocLine));
+	delete pcDocLineDel;
+	//m_docLineMemRes->deallocate(pcDocLineDel, sizeof(CDocLine));
 
 	//行数減算
 	m_nLines--;
@@ -132,6 +136,30 @@ void CDocLineMgr::DeleteLine( CDocLine* pcDocLineDel )
 		// データがなくなった
 		_Init();
 	}
+}
+
+//! 他のCDocLineMgrの内容を末尾に追加する
+//! 元のCDocLineMgrの内容は空になる
+void CDocLineMgr::MoveAppend( CDocLineMgr& other )
+{
+	if( other.GetDocLineTop() == nullptr ){ return; }
+
+	// 双方向リンクをつなぐ
+	other.GetDocLineTop()->m_pPrev = m_pDocLineBot;
+	if( m_pDocLineBot != nullptr ){
+		m_pDocLineBot->m_pNext = other.GetDocLineTop();
+	}
+
+	// 先頭/末尾を更新
+	if( m_pDocLineTop == nullptr ){
+		m_pDocLineTop = other.GetDocLineTop();
+	}
+	m_pDocLineBot = other.GetDocLineBottom();
+
+	m_nLines += other.GetLineCount();
+
+	// 所有権が移ったので空っぽにしておく
+	other._Init();
 }
 
 // -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- //
