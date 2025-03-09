@@ -218,7 +218,6 @@ EConvertResult CReadManager::ReadFile_To_CDocLineMgr(
 		pcDocLineMgr->DeleteAllLine();
 	} // 例外処理終わり
 
-	NotifyProgress(0);
 	/* 処理中のユーザー操作を可能にする */
 	if( !::BlockingHook( NULL ) ){
 		return RESULT_FAILURE; //####INTERRUPT
@@ -269,7 +268,8 @@ EConvertResult CReadManager::ReadLines(
 			const auto currTime = GetTickCount64();
 			if( currTime >= nextTime ){
 				nextTime += timeInterval;
-				NotifyProgress( cFileLoad.GetPercent() );
+				// 進捗率は読み込み処理とレイアウト処理とで50%ずつとする
+				NotifyProgress( cFileLoad.GetPercent() / 2 );
 				// 処理中のユーザー操作を可能にする
 				if( !::BlockingHook( NULL ) ){
 					// 中断検知

@@ -489,7 +489,7 @@ void CLayoutMgr::_DoLayoutSub(CDocLine* pDocLineBegin, const CDocLine* pDocLineE
 				const ULONGLONG diffTime = currTime - prevTime;
 				if( diffTime >= userInterfaceInterval ){
 					prevTime = currTime;
-					NotifyProgress( ::MulDiv( pWork->nCurLine, 100, nLineCount ) );
+					NotifyProgress( 50 + ::MulDiv( pWork->nCurLine, 50, nLineCount ) );
 					if( pbCanceled != nullptr && !::BlockingHook( NULL ) ){
 						pbCanceled->store( true );
 						return;
